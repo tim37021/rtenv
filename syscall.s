@@ -2,7 +2,6 @@
 	.cpu cortex-m3
 	.fpu softvfp
 	.thumb
-
 .global fork
 fork:
 	push {r7}

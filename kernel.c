@@ -2,108 +2,14 @@
 #include "RTOSConfig.h"
 
 #include "syscall.h"
+#include "syscall_def.h"
+#include "clib.h"
+#include "kernel.h"
+#include "rtenv_shell.h"
 
 #include <stddef.h>
 
-void *memcpy(void *dest, const void *src, size_t n);
-
-int strcmp(const char *a, const char *b) __attribute__ ((naked));
-int strcmp(const char *a, const char *b)
-{
-	asm(
-        "strcmp_lop:                \n"
-        "   ldrb    r2, [r0],#1     \n"
-        "   ldrb    r3, [r1],#1     \n"
-        "   cmp     r2, #1          \n"
-        "   it      hi              \n"
-        "   cmphi   r2, r3          \n"
-        "   beq     strcmp_lop      \n"
-		"	sub     r0, r2, r3  	\n"
-        "   bx      lr              \n"
-		:::
-	);
-}
-
-size_t strlen(const char *s) __attribute__ ((naked));
-size_t strlen(const char *s)
-{
-	asm(
-		"	sub  r3, r0, #1			\n"
-        "strlen_loop:               \n"
-		"	ldrb r2, [r3, #1]!		\n"
-		"	cmp  r2, #0				\n"
-        "   bne  strlen_loop        \n"
-		"	sub  r0, r3, r0			\n"
-		"	bx   lr					\n"
-		:::
-	);
-}
-
-void puts(char *s)
-{
-	while (*s) {
-		while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET)
-			/* wait */ ;
-		USART_SendData(USART2, *s);
-		s++;
-	}
-}
-
-#define STACK_SIZE 512 /* Size of task stacks in words */
-#define TASK_LIMIT 8  /* Max number of tasks we can handle */
-#define PIPE_BUF   64 /* Size of largest atomic pipe message */
-#define PATH_MAX   32 /* Longest absolute path */
-#define PIPE_LIMIT (TASK_LIMIT * 2)
-
-#define PATHSERVER_FD (TASK_LIMIT + 3) 
-	/* File descriptor of pipe to pathserver */
-
-#define PRIORITY_DEFAULT 20
-#define PRIORITY_LIMIT (PRIORITY_DEFAULT * 2 - 1)
-
-#define TASK_READY      0
-#define TASK_WAIT_READ  1
-#define TASK_WAIT_WRITE 2
-#define TASK_WAIT_INTR  3
-#define TASK_WAIT_TIME  4
-
-#define S_IFIFO 1
-#define S_IMSGQ 2
-
-#define O_CREAT 4
-
-/* Stack struct of user thread, see "Exception entry and return" */
-struct user_thread_stack {
-	unsigned int r4;
-	unsigned int r5;
-	unsigned int r6;
-	unsigned int r7;
-	unsigned int r8;
-	unsigned int r9;
-	unsigned int r10;
-	unsigned int fp;
-	unsigned int _lr;	/* Back to system calls or return exception */
-	unsigned int _r7;	/* Backup from isr */
-	unsigned int r0;
-	unsigned int r1;
-	unsigned int r2;
-	unsigned int r3;
-	unsigned int ip;
-	unsigned int lr;	/* Back to user thread code */
-	unsigned int pc;
-	unsigned int xpsr;
-	unsigned int stack[STACK_SIZE - 18];
-};
-
-/* Task Control Block */
-struct task_control_block {
-    struct user_thread_stack *stack;
-    int pid;
-    int status;
-    int priority;
-    struct task_control_block **prev;
-    struct task_control_block  *next;
-};
+struct task_ctl_ptr tctlptr;
 
 /* 
  * pathserver assumes that all files are FIFOs that were registered
@@ -243,16 +149,6 @@ void serialin(USART_TypeDef* uart, unsigned int intr)
 	}
 }
 
-void greeting()
-{
-	int fdout = open("/dev/tty0/out", 0);
-	char *string = "Hello, World!\n";
-	while (*string) {
-		write(fdout, string, 1);
-		string++;
-	}
-}
-
 void echo()
 {
 	int fdout, fdin;
@@ -304,71 +200,80 @@ void queue_str_task(const char *str, int delay)
 	}
 }
 
-void queue_str_task1()
+void greeting(int fdout)
 {
-	queue_str_task("Hello 1\n", 200);
+	char *string = "Welcome to rtenv\n\rAvailable commands: echo ps exit\n";
+	write(fdout, string, strlen(string)+1);
 }
 
-void queue_str_task2()
-{
-	queue_str_task("Hello 2\n", 50);
+char *parse_cmd(char *buf){
+	int i;
+	for(i=0;buf[i]!='\0'&&buf[i]!=' '; ++i);
+	buf[i]='\0';
+	return buf;
 }
 
-void serial_readwrite_task()
+void rtenv_shell()
 {
 	int fdout, fdin;
 	char str[100];
-	char ch;
+	char ch[2]={0};
 	int curr_char;
 	int done;
 
 	fdout = mq_open("/tmp/mqueue/out", 0);
 	fdin = open("/dev/tty0/in", 0);
 
-	/* Prepare the response message to be queued. */
-	memcpy(str, "Got:", 4);
+	greeting(fdout);
 
-	while (1) {
-		curr_char = 4;
+
+	while(1){
+		write(fdout, "\r>", 3);
+		curr_char = 0;
 		done = 0;
 		do {
 			/* Receive a byte from the RS232 port (this call will
 			 * block). */
-			read(fdin, &ch, 1);
+			read(fdin, ch, 1);
 
 			/* If the byte is an end-of-line type character, then
 			 * finish the string and inidcate we are done.
 			 */
-			if (curr_char >= 98 || (ch == '\r') || (ch == '\n')) {
-				str[curr_char] = '\n';
-				str[curr_char+1] = '\0';
+			if (curr_char >= 98 || (*ch == '\r') || (*ch == '\n')) {
+				write(fdout, "\n", 2);
+				str[curr_char] = '\0';
 				done = -1;
 				/* Otherwise, add the character to the
 				 * response string. */
 			}
 			else {
-				str[curr_char++] = ch;
+				write(fdout, ch, 2);
+				str[curr_char++] = *ch;
 			}
 		} while (!done);
 
 		/* Once we are done building the response string, queue the
 		 * response to be sent to the RS232 port.
 		 */
-		write(fdout, str, curr_char+1+1);
-	}
+		parse_cmd(str);
+		if(strcmp("echo", str)==0)
+			{fprintf(fdout, "\r%s\n", str+5); continue;}
+		if(strcmp("ps", str)==0)
+			{ps_command(fdout); continue;}
+		if(strcmp("exit", str)==0)
+			break;
+	}	
 }
 
 void first()
 {
 	setpriority(0, 0);
 
-	if (!fork()) setpriority(0, 0), pathserver();
-	if (!fork()) setpriority(0, 0), serialout(USART2, USART2_IRQn);
-	if (!fork()) setpriority(0, 0), serialin(USART2, USART2_IRQn);
-	if (!fork()) rs232_xmit_msg_task();
-	if (!fork()) setpriority(0, PRIORITY_DEFAULT - 10), queue_str_task1();
-	if (!fork()) setpriority(0, PRIORITY_DEFAULT - 10), queue_str_task2();
-	if (!fork()) setpriority(0, PRIORITY_DEFAULT - 10), serial_readwrite_task();
+	if (!fork()) setpriority(getpid(), 0), set_proc_desc(getpid(), "PathServer"), pathserver();
+	if (!fork()) setpriority(getpid(), 0), set_proc_desc(getpid(), "SerialOut"), serialout(USART2, USART2_IRQn);
+	if (!fork()) setpriority(getpid(), 0), set_proc_desc(getpid(), "SerialIn"), serialin(USART2, USART2_IRQn);
+	if (!fork()) setpriority(getpid(), 0),set_proc_desc(getpid(), "XmitMsgTask"), rs232_xmit_msg_task();
+	if (!fork()) setpriority(getpid(), PRIORITY_DEFAULT - 10), set_proc_desc(getpid(), "RtenvShell"), rtenv_shell();
 
 	setpriority(0, PRIORITY_LIMIT);
 
@@ -685,9 +590,14 @@ int main()
 	init_rs232();
 	__enable_irq();
 
+	/*Dirty Global trick, this time I use pointer to reduce memory usage*/
+	tctlptr.task_ptr=tasks;
+	tctlptr.task_count=&task_count;
+
 	tasks[task_count].stack = (void*)init_task(stacks[task_count], &first);
 	tasks[task_count].pid = 0;
 	tasks[task_count].priority = PRIORITY_DEFAULT;
+	set_proc_desc(task_count, "System   ");
 	task_count++;
 
 	/* Initialize all pipes */
@@ -708,7 +618,7 @@ int main()
 		timeup = 0;
 
 		switch (tasks[current_task].stack->r7) {
-		case 0x1: /* fork */
+		case SYSCALL_FORK: /* fork */
 			if (task_count == TASK_LIMIT) {
 				/* Cannot create a new task, return error */
 				tasks[current_task].stack->r0 = -1;
@@ -736,22 +646,22 @@ int main()
 				task_count++;
 			}
 			break;
-		case 0x2: /* getpid */
+		case SYSCALL_GETPID: /* getpid */
 			tasks[current_task].stack->r0 = current_task;
 			break;
-		case 0x3: /* write */
+		case SYSCALL_WRITE: /* write */
 			_write(&tasks[current_task], tasks, task_count, pipes);
 			break;
-		case 0x4: /* read */
+		case SYSCALL_READ: /* read */
 			_read(&tasks[current_task], tasks, task_count, pipes);
 			break;
-		case 0x5: /* interrupt_wait */
+		case SYSCALL_INTERRUPTWAIT: /* interrupt_wait */
 			/* Enable interrupt */
 			NVIC_EnableIRQ(tasks[current_task].stack->r0);
 			/* Block task waiting for interrupt to happen */
 			tasks[current_task].status = TASK_WAIT_INTR;
 			break;
-		case 0x6: /* getpriority */
+		case SYSCALL_GETPRIORITY: /* getpriority */
 			{
 				int who = tasks[current_task].stack->r0;
 				if (who > 0 && who < (int)task_count)
@@ -761,7 +671,7 @@ int main()
 				else
 					tasks[current_task].stack->r0 = -1;
 			} break;
-		case 0x7: /* setpriority */
+		case SYSCALL_SETPRIORITY: /* setpriority */
 			{
 				int who = tasks[current_task].stack->r0;
 				int value = tasks[current_task].stack->r1;
@@ -776,7 +686,7 @@ int main()
 				}
 				tasks[current_task].stack->r0 = 0;
 			} break;
-		case 0x8: /* mknod */
+		case SYSCALL_MKNOD: /* mknod */
 			if (tasks[current_task].stack->r0 < PIPE_LIMIT)
 				tasks[current_task].stack->r0 =
 					_mknod(&pipes[tasks[current_task].stack->r0],
@@ -784,7 +694,7 @@ int main()
 			else
 				tasks[current_task].stack->r0 = -1;
 			break;
-		case 0x9: /* sleep */
+		case SYSCALL_SLEEP: /* sleep */
 			if (tasks[current_task].stack->r0 != 0) {
 				tasks[current_task].stack->r0 += tick_count;
 				tasks[current_task].status = TASK_WAIT_TIME;
