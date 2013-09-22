@@ -247,8 +247,16 @@ void rtenv_shell()
 				 * response string. */
 			}
 			else {
-				write(fdout, ch, 2);
-				str[curr_char++] = *ch;
+				/*for backspace*/
+				if(*ch==127){
+					if(curr_char>0){
+						write(fdout, "\b \b", 4);
+						 --curr_char;
+					}
+				}else{
+					write(fdout, ch, 2);
+					str[curr_char++] = *ch;
+				}
 			}
 		} while (!done);
 
