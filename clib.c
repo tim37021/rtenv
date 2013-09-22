@@ -51,51 +51,38 @@ int fprintf(int fd, const char *format, ...){
 	va_list v1;
 	va_start(v1, format);
 
-	int i=0, cur_char=0;
+	int i=0;
 	int argtmpi, tmp2;
 	char *argtmpcp, argtmpc;
-	char buffer[512]={0};
+	char tmpbuf[20]={0};
 	while(format[i]!='\0'){
 		if(format[i]=='%'){
 			switch(format[i+1]){
 				case '%':
-					buffer[cur_char++]='%'; i+=2; continue;
+					write(fd, "%", 2); i+=2; continue;
 				case 'd':
-					/*to keep it simple, we flush the buffer*/
-					buffer[cur_char]='\0';
-					write(fd, buffer, cur_char+1);
-					cur_char=0;
-
 					argtmpi=va_arg(v1, int);
-					tmp2=itoa(buffer, argtmpi);
-					write(fd, buffer, tmp2+1);
+					tmp2=itoa(tmpbuf, argtmpi);
+					write(fd, tmpbuf, tmp2+1);
 					i+=2; continue;
 					
 				case 's':
-					/*to keep it simple, we flush the buffer*/
-					buffer[cur_char]='\0';
-					write(fd, buffer, cur_char+1);
-					cur_char=0;
 					argtmpcp=va_arg(v1, char *);
 					write(fd, argtmpcp, strlen(argtmpcp)+1);
 					i+=2; continue;
 				case 'c':
 					argtmpc=va_arg(v1, int);
-					buffer[cur_char++]=argtmpc;
+					tmpbuf[0]=argtmpc; tmpbuf[1]='\0';
+					write(fd, tmpbuf, 2);
 					i+=2; continue;
 				default:;
 			}
-		}else
-			buffer[cur_char++]=format[i];
-		if(cur_char>=480){
-			buffer[cur_char]='\0';
-			write(fd, buffer, cur_char+1);
-			cur_char=0;
+		}else{
+			tmpbuf[0]=format[i];tmpbuf[1]='\0';
+			write(fd, tmpbuf, 2);
 		}
 		++i;
 	}
-	buffer[cur_char]='\0';
-	write(fd, buffer, cur_char+1);
 
 	va_end(v1);
 }
