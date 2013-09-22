@@ -101,8 +101,8 @@ int fprintf(int fd, const char *format, ...){
 }
 
 size_t itoa(char *buf, int number){
-	char tmp[20]={0}; int i=0;
-	if(number==0){memcpy(buf,"0",2); return 1;}
+	char tmp[15]={0}; int i=0;
+	if(number==0){buf[0]='0'; buf[1]=0; return 1;}
 	while(number!=0){
 		tmp[i++]='0'+(number%10);
 		number/=10;
