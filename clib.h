@@ -13,9 +13,8 @@ int fprintf(int, const char *, ...);
 
 /*
 Implement a Non-standard itoa
-the function will not add '\0' at the end
-
+return address of local static(thanks jserv)
 */
-size_t itoa(char *, int);
+char *itoa(int number, int base);
 
 #endif

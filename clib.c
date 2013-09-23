@@ -62,8 +62,8 @@ int fprintf(int fd, const char *format, ...){
 					write(fd, "%", 2); i+=2; continue;
 				case 'd':
 					argtmpi=va_arg(v1, int);
-					tmp2=itoa(tmpbuf, argtmpi);
-					write(fd, tmpbuf, tmp2+1);
+					argtmpcp=itoa(argtmpi, 10);
+					write(fd, argtmpcp, strlen(argtmpcp)+1);
 					i+=2; continue;
 					
 				case 's':
@@ -87,20 +87,17 @@ int fprintf(int fd, const char *format, ...){
 	va_end(v1);
 }
 
-size_t itoa(char *buf, int number){
-	char tmp[15]={0}; int i=0;
-	if(number==0){buf[0]='0'; buf[1]=0; return 1;}
-	while(number!=0){
-		tmp[i++]='0'+(number%10);
-		number/=10;
+char *itoa(int number, int base){
+	static char buffer[32]={0};
+	if(number==0){
+		//if number is zero, for loop below will not run
+		buffer[30]='0';
+		return &buffer[30];
 	}
-	size_t len=strlen(tmp);
-	/*Reversing the string*/
-	for(i=len-1; i>=0; --i){
-		buf[len-1-i]=tmp[i];
-	}
-	buf[len]='\0';
-	return len;
+	int i=30;
+	for(;number && i; --i, number/=base)
+		buffer[i]= "0123456789ABCDEF" [number%base];
+	return &buffer[i+1];
 }
 
 /*
