@@ -5,9 +5,15 @@
 #include "syscall.h"
 
 
+//#pragma GCC diagnostic ignored "-pedantic"
+
 int strcmp(const char *a, const char *b)
 {
-	asm(
+	/* help me! this doesn't work
+	while(*a && (*a==*b))
+		++a, ++b;
+	return *a-*b; */
+	__asm(
         "strcmp_lop:                \n"
         "   ldrb    r2, [r0],#1     \n"
         "   ldrb    r3, [r1],#1     \n"
@@ -17,14 +23,16 @@ int strcmp(const char *a, const char *b)
         "   beq     strcmp_lop      \n"
 		"	sub     r0, r2, r3  	\n"
         "   bx      lr              \n"
-		:::
-	);
+		:::);
 }
 
 
 size_t strlen(const char *s)
 {
-	asm(
+	/*const char *p;
+	for(p=s;*p!='\0';++p);
+	return p-s;*/
+	__asm(
 		"	sub  r3, r0, #1			\n"
         "strlen_loop:               \n"
 		"	ldrb r2, [r3, #1]!		\n"
@@ -61,8 +69,12 @@ int fprintf(int fd, const char *format, ...){
 				case '%':
 					write(fd, "%", 2); i+=2; continue;
 				case 'd':
+				case 'x':
 					argtmpi=va_arg(v1, int);
-					argtmpcp=itoa(argtmpi, 10);
+					if(format[i+1]=='d')
+						argtmpcp=itoa(argtmpi, 10);
+					else if(format[i+1]=='x')
+						argtmpcp=itoa(argtmpi, 16);
 					write(fd, argtmpcp, strlen(argtmpcp)+1);
 					i+=2; continue;
 					
@@ -76,6 +88,7 @@ int fprintf(int fd, const char *format, ...){
 					write(fd, tmpbuf, 2);
 					i+=2; continue;
 				default:;
+					/*ignore unknown specifiers*/
 			}
 		}else{
 			tmpbuf[0]=format[i];tmpbuf[1]='\0';
