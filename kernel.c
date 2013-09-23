@@ -1,4 +1,6 @@
 #include "stm32f10x.h"
+/*add for declartion of init_rs232*/
+#include "stm32_p103.h"
 #include "RTOSConfig.h"
 
 #include "syscall.h"

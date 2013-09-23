@@ -64,8 +64,6 @@ struct task_ctl_ptr{
 	struct task_control_block *task_ptr;
 };
 
-//I don't know what exectly the function declaration is.
-void init_rs232();
 
 #endif
 
