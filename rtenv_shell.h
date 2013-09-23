@@ -7,6 +7,6 @@ extern struct task_ctl_ptr tctlptr;
 
 void ps_command(int);
 
-
+enum KeyName{BACKSPACE=127};
 
 #endif

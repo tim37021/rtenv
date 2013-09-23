@@ -202,7 +202,7 @@ void queue_str_task(const char *str, int delay)
 
 void greeting(int fdout)
 {
-	char *string = "\rWelcome to rtenv\n\rAvailable commands: echo ps exit\n";
+	char *string = "\rWelcome to rtenv\n\rAvailable commands: echo ps help\n";
 	write(fdout, string, strlen(string)+1);
 }
 
@@ -248,7 +248,7 @@ void rtenv_shell()
 			}
 			else {
 				/*for backspace*/
-				if(*ch==127){
+				if(*ch==BACKSPACE){
 					if(curr_char>0){
 						write(fdout, "\b \b", 4);
 						 --curr_char;
