@@ -15,6 +15,8 @@ all: main.bin
 
 main.bin: kernel.c context_switch.s syscall.s syscall.h syscall_def.h clib.h clib.c rtenv_shell.c rtenv_shell.h
 	$(CROSS_COMPILE)gcc \
+		-std=c99 \
+		-pedantic \
 		-Wl,-Tmain.ld -nostartfiles \
 		-I . \
 		-I$(LIBDIR)/libraries/CMSIS/CM3/CoreSupport \
