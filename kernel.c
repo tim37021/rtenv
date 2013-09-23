@@ -616,8 +616,11 @@ int main()
 	tctlptr.task_count=&task_count;
 
 	tasks[task_count].stack = (void*)init_task(stacks[task_count], &first);
+	/*pid cannot be zero, but it is hard to fix the problem keep it here temporarily*/
+	tasks[task_count].ppid=-2;
 	tasks[task_count].pid = 0;
 	tasks[task_count].priority = PRIORITY_DEFAULT;
+	
 	set_proc_desc(task_count, "System   ");
 	task_count++;
 
@@ -655,6 +658,7 @@ int main()
 				       used * sizeof(unsigned int));
 				/* Set PID */
 				tasks[task_count].pid = task_count;
+				tasks[task_count].ppid=current_task;
 				/* Set priority, inherited from forked task */
 				tasks[task_count].priority = tasks[current_task].priority;
 				/* Set return values in each process */

@@ -107,9 +107,16 @@ char *itoa(int number, int base){
 		buffer[30]='0';
 		return &buffer[30];
 	}
+	/*negative part is not elegant, i will fix it later*/
+	int negative=(number<0);
+	if(negative) number=-number;
 	int i=30;
 	for(;number && i; --i, number/=base)
 		buffer[i]= "0123456789ABCDEF" [number%base];
+	if(negative){
+		buffer[i]='-';
+		--i;
+	}
 	return &buffer[i+1];
 }
 

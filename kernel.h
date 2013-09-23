@@ -50,6 +50,11 @@ struct user_thread_stack {
 /* Task Control Block */
 struct task_control_block {
 	struct user_thread_stack *stack;
+	/*Parent pid
+	if no parent ppid is -2
+	fork returns 0 to child process and child's pid to parent process, -1 if it fails.
+	*/
+	int ppid;
 	int pid;
 	int status;
 	int priority;
