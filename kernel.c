@@ -149,6 +149,11 @@ void serialin(USART_TypeDef* uart, unsigned int intr)
 	}
 }
 
+void set_proc_desc(int pid, const char *desc){
+        memcpy(tctlptr.task_ptr[pid].description,desc, strlen(desc)+1);
+}
+
+
 void echo()
 {
 	int fdout, fdin;
