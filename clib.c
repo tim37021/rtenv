@@ -9,10 +9,11 @@
 
 int strcmp(const char *a, const char *b)
 {
-	/* help me! this doesn't work
+#ifndef ENABLE_ASM_OPT
 	while(*a && (*a==*b))
 		++a, ++b;
-	return *a-*b; */
+	return *a-*b;
+#else
 	__asm(
         "strcmp_lop:                \n"
         "   ldrb    r2, [r0],#1     \n"
@@ -24,16 +25,22 @@ int strcmp(const char *a, const char *b)
 		"	sub     r0, r2, r3  	\n"
         "   bx      lr              \n"
 		:::);
+#endif
 }
+
 
 
 size_t strlen(const char *s)
 {
-	/*const char *p;
-	for(p=s;*p!='\0';++p);
-	return p-s;*/
+#ifndef ENABLE_ASM_OPT
+	int count=0;
+	while(*s++)
+		++count;
+	return count;
+#else
+	
 	__asm(
-		"	sub  r3, r0, #1			\n"
+	"	sub  r3, r0, #1			\n"
         "strlen_loop:               \n"
 		"	ldrb r2, [r3, #1]!		\n"
 		"	cmp  r2, #0				\n"
@@ -42,7 +49,17 @@ size_t strlen(const char *s)
 		"	bx   lr					\n"
 		:::
 	);
+#endif
 }
+
+#ifndef ENABLE_ASM_OPT
+void *memcpy(void * restrict dest, const void * restrict src, size_t n){
+	int i;
+	for(i=0; i<n; ++i)
+		*((unsigned char *)dest+i)=*((unsigned char *)src+i);
+	return dest;
+}
+#endif
 
 char *strncat(char *str1, const char *str2, size_t n){
 	int start=strlen(str1);
