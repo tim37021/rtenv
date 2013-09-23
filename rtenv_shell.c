@@ -8,6 +8,6 @@ void ps_command(int fd){
 	int i;
 	fprintf(fd, "\rPID\tDescription\t\t\tPriority\tStatus\n");
 	for(i=0; i<*tctlptr.task_count; ++i){
-		fprintf(fd, "\r%d\t%s\t\t\t%x\t\t%s\n", tctlptr.task_ptr[i].pid, tctlptr.task_ptr[i].description, tctlptr.task_ptr[i].priority, status_desc[tctlptr.task_ptr[i].status]);
+		fprintf(fd, "\r%d\t%s\t\t\t%d\t\t%s\n", tctlptr.task_ptr[i].pid, tctlptr.task_ptr[i].description, tctlptr.task_ptr[i].priority, status_desc[tctlptr.task_ptr[i].status]);
 	}
 }

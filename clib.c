@@ -73,7 +73,7 @@ int fprintf(int fd, const char *format, ...){
 					argtmpi=va_arg(v1, int);
 					if(format[i+1]=='d')
 						argtmpcp=itoa(argtmpi, 10);
-					else if(format[i+1]=='x')
+					else
 						argtmpcp=itoa(argtmpi, 16);
 					write(fd, argtmpcp, strlen(argtmpcp)+1);
 					i+=2; continue;
