@@ -1,6 +1,8 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
+#include <stddef.h>
+
 #define STACK_SIZE 512 /* Size of task stacks in words */
 #define TASK_LIMIT 8  /* Max number of tasks we can handle */
 #define PIPE_BUF   64 /* Size of largest atomic pipe message */
@@ -58,9 +60,12 @@ struct task_control_block {
 };
 
 struct task_ctl_ptr{
-	int *task_count;
+	size_t *task_count;
 	struct task_control_block *task_ptr;
 };
+
+//I don't know what exectly the function declaration is.
+void init_rs232();
 
 #endif
 
