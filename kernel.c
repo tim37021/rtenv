@@ -209,7 +209,7 @@ void queue_str_task(const char *str, int delay)
 
 void greeting(int fdout)
 {
-	char *string = "\rWelcome to rtenv\n\rAvailable commands: echo ps help\n";
+	const char *string = "\rWelcome to rtenv\n";
 	write(fdout, string, strlen(string)+1);
 }
 
@@ -271,18 +271,11 @@ void rtenv_shell()
 		 * response to be sent to the RS232 port.
 		 */
 		int len=parse_cmd(str);
-		if(strcmp("echo", str)==0){
-			fprintf(fdout, "\r%s\n", str+len+1); 
-			/*bug fix: when user type only 'echo'*/
-			str[len+1]='\0';continue;
-		}
-		if(strcmp("ps", str)==0)
-			{ps_command(fdout); continue;}
-		if(strcmp("help", str)==0)
-			{greeting(fdout); continue;}
-		if(strcmp("exit", str)==0)
-			break;
-		fprintf(fdout, "\rInvaild command '%s'\n", str);
+		int (*func_ptr)(int, char *)=NULL;
+		if(func_ptr=cmd_map(str))
+			func_ptr(fdout, str+len+1);
+		else
+			fprintf(fdout, "\rInvaild command '%s'\n", str);
 	}	
 }
 
