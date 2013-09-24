@@ -22,11 +22,13 @@ int echo_command(int fd, char *arg){
 }
 
 int help_command(int fd, char *arg){
-	fprintf(fd, "\rThis is help command\n");
+	fprintf(fd, "\recho - Print a string\n"
+		"\rps - List process\n"
+		"\rhelp - nothing to explain\n");
 	return 0;
 }
 
-int (*cmd_map(const char *cmd))(int, char *){
+PTR_CMD_FUNC_PROTO cmd_map(const char *cmd){
 	static struct cmd_func_map cfm[]={
 		{.cmd="ps", .cmd_func=ps_command}
 		,{.cmd="echo", .cmd_func=echo_command}

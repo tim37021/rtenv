@@ -12,12 +12,15 @@ int help_command(int fd, char *cmd);
 
 enum KeyName{BACKSPACE=127};
 
+typedef int (*PTR_CMD_FUNC_PROTO)(int, char *);
+
 struct cmd_func_map {
 	char *cmd;
-	int (*cmd_func)(int, char *);
+	PTR_CMD_FUNC_PROTO cmd_func;
 };
 
+
 /*Not an elegant declaration, will fix it later*/
-int (*cmd_map(const char *cmd))(int, char *);
+PTR_CMD_FUNC_PROTO cmd_map(const char *cmd);
 
 #endif

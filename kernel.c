@@ -271,7 +271,7 @@ void rtenv_shell()
 		 * response to be sent to the RS232 port.
 		 */
 		int len=parse_cmd(str);
-		int (*func_ptr)(int, char *)=NULL;
+		PTR_CMD_FUNC_PROTO func_ptr=NULL;
 		if(func_ptr=cmd_map(str))
 			func_ptr(fdout, str+len+1);
 		else
