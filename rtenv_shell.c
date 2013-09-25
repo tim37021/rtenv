@@ -20,23 +20,31 @@ int echo_command(int fd, char *arg){
 	arg[0]='\0';
 	return 0;
 }
-
 int help_command(int fd, char *arg){
-	fprintf(fd, "\recho - Print a string\n"
-		"\rps - List process\n"
-		"\rhelp - nothing to explain\n");
+	int count;
+	struct cmd_func_map *cfm=get_cfm(&count);
+	for(int i=0; i<count; ++i){
+		fprintf(fd, "\r%s - %s\n", cfm[i].cmd, cfm[i].desc);
+	}
 	return 0;
 }
 
-PTR_CMD_FUNC_PROTO cmd_map(const char *cmd){
+struct cmd_func_map *get_cfm(int *count){
 	static struct cmd_func_map cfm[]={
-		{.cmd="ps", .cmd_func=ps_command}
-		,{.cmd="echo", .cmd_func=echo_command}
-		,{.cmd="help", .cmd_func=help_command}
+		{.cmd="ps", .cmd_func=ps_command, .desc="List process"}
+		,{.cmd="echo", .cmd_func=echo_command, .desc="Print a string"}
+		,{.cmd="help", .cmd_func=help_command, .desc="help"}
 	};
+	*count=sizeof(cfm)/sizeof(cfm[0]);
+	return cfm;
+}
 
-	int i;
-	for(i=0; i<sizeof(cfm)/sizeof(cfm[0]); ++i){
+PTR_CMD_FUNC_PROTO cmd_map(const char *cmd){
+
+
+	int i, count;
+	struct cmd_func_map *cfm=get_cfm(&count);
+	for(i=0; i<count; ++i){
 		if(strcmp(cfm[i].cmd, cmd)==0)
 			return cfm[i].cmd_func;
 	}
