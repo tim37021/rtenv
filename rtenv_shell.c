@@ -2,6 +2,14 @@
 #include "clib.h"
 #include "kernel.h"
 
+int parse_cmd(char *buf){
+        int i;
+        for(i=0;buf[i]!='\0'&&buf[i]!=' '; ++i);
+        buf[i]='\0';
+        return i;
+}
+
+
 int ps_command(int fd, char *arg){
 	const char *status_desc[]={"READY", "WAIT_READ", "WAIT_WRITE", "WAIT_INTR", "WAIT_TIME"};
 
@@ -29,12 +37,37 @@ int help_command(int fd, char *arg){
 	return 0;
 }
 
+int alias_command(int fd, char *arg){
+	static int cmd_map_count=0;
+
+	int len=parse_cmd(arg);
+	if(cmd_map_count>=MAX_CMD_ALIAS)
+		fprintf(fd,"\rReach the limit of alias.\n");
+	else{
+		struct alias_cmd *cm=get_cm();
+		memcpy(cm[cmd_map_count].cmd, arg, len+1);
+		/*This line does not work correctly if ENABLE_ASM_OPT*/
+		/*Instead i use my version of memcpy.*/
+		memcpy(cm[cmd_map_count].map_cmd, arg+len+1, strlen(arg+len+1)+1);
+		++cmd_map_count;
+	}
+
+	arg[len+1]='\0';
+	return 0;
+}
+
+struct alias_cmd *get_cm(){
+	static struct alias_cmd cm[MAX_CMD_ALIAS]={0};
+	return cm;
+}
+
 struct cmd_func_map *get_cfm(int *count){
 	static struct cmd_func_map cfm[]={
 		{.cmd="ps", .cmd_func=ps_command, .desc="List process"}
 		,{.cmd="echo", .cmd_func=echo_command, .desc="Print a string"}
+		,{.cmd="alias", .cmd_func=alias_command, .desc="Alias a command"}
 		,{.cmd="help", .cmd_func=help_command, .desc="help"}
-	};
+};
 	*count=sizeof(cfm)/sizeof(cfm[0]);
 	return cfm;
 }
@@ -47,6 +80,17 @@ PTR_CMD_FUNC_PROTO cmd_map(const char *cmd){
 	for(i=0; i<count; ++i){
 		if(strcmp(cfm[i].cmd, cmd)==0)
 			return cfm[i].cmd_func;
+	}
+	return NULL;
+}
+
+
+const char *alias_map(const char *cmd){
+	int i;
+	struct alias_cmd *cm=get_cm();
+	for(i=0; i<MAX_CMD_ALIAS; ++i){
+		if(strcmp(cm[i].cmd, cmd)==0)
+			return cm[i].map_cmd;
 	}
 	return NULL;
 }

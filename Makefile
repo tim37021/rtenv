@@ -17,7 +17,6 @@ main.bin: kernel.c context_switch.s syscall.s syscall.h syscall_def.h clib.h cli
 	$(CROSS_COMPILE)gcc \
 		-std=c99 \
 		-pedantic \
-		-DENABLE_ASM_OPT \
 		-Wl,-Tmain.ld -nostartfiles \
 		-I . \
 		-I$(LIBDIR)/libraries/CMSIS/CM3/CoreSupport \
@@ -42,7 +41,6 @@ main.bin: kernel.c context_switch.s syscall.s syscall.h syscall_def.h clib.h cli
 		syscall.s \
 		stm32_p103.c \
 		kernel.c \
-		memcpy.s  \
 		clib.c \
 		rtenv_shell.c
 	$(CROSS_COMPILE)objcopy -Obinary main.elf main.bin

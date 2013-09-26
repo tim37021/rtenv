@@ -213,13 +213,6 @@ void greeting(int fdout)
 	write(fdout, string, strlen(string)+1);
 }
 
-int parse_cmd(char *buf){
-	int i;
-	for(i=0;buf[i]!='\0'&&buf[i]!=' '; ++i);
-	buf[i]='\0';
-	return i;
-}
-
 void rtenv_shell()
 {
 	int fdout, fdin;
@@ -254,15 +247,23 @@ void rtenv_shell()
 				 * response string. */
 			}
 			else {
-				/*for backspace*/
-				if(*ch==BACKSPACE){
-					if(curr_char>0){
-						write(fdout, "\b \b", 4);
-						 --curr_char;
-					}
-				}else{
-					write(fdout, ch, 2);
-					str[curr_char++] = *ch;
+				switch(*ch){
+					case BACKSPACE:
+						if(curr_char>0){
+							write(fdout, "\b \b", 4);
+							--curr_char;
+						}
+						break;
+					case ESC:
+						read(fdin, ch, 1);
+						read(fdin, ch, 1);
+						/*eat pgdn and pgup ESC[5'~'*/
+						if(*ch=='5'||*ch=='6')
+							read(fdin, ch, 1);
+						break;
+					default:
+						write(fdout, ch, 2);
+						str[curr_char++] = *ch;
 				}
 			}
 		} while (!done);
@@ -270,12 +271,34 @@ void rtenv_shell()
 		/* Once we are done building the response string, queue the
 		 * response to be sent to the RS232 port.
 		 */
+		/*
+		  To get alias work correctly
+		  ex:'alias sayhello echo hello'
+		     'sayhello'
+		  without this line will output hello hello
+		*/
+		str[strlen(str)+1]='\0';
 		int len=parse_cmd(str);
 		PTR_CMD_FUNC_PROTO func_ptr=NULL;
 		if(func_ptr=cmd_map(str))
 			func_ptr(fdout, str+len+1);
-		else
-			fprintf(fdout, "\rInvaild command '%s'\n", str);
+		else{
+			const char *mapped_cmd;
+			if(mapped_cmd=alias_map(str)){
+				char str2[100];
+				int len2=strlen(mapped_cmd);
+				memcpy(str2, mapped_cmd, len2);
+				str2[len2]=' ';
+				memcpy(str2+len2+1, str+len+1, strlen(str+len+1)+1);
+
+				len=parse_cmd(str2);
+				if(func_ptr=cmd_map(str2))
+					func_ptr(fdout, str2+len+1);
+				else
+					fprintf(fdout, "\rInvaild command '%s'\n", str2);
+			}else
+				fprintf(fdout, "\rInvaild command '%s'\n", str);
+		}
 	}	
 }
 
