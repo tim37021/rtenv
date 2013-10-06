@@ -16,7 +16,8 @@ char *strncat(char *, const char *, size_t n);
 
 int fprintf(int, const char *, ...);
 
-
+void *malloc(size_t n);
+void free(void *);
 /*
 Implement a Non-standard itoa
 return address of local static(thanks jserv)
