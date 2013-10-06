@@ -66,6 +66,7 @@ struct cmd_func_map *get_cfm(int *count){
 		{.cmd="ps", .cmd_func=ps_command, .desc="List process"}
 		,{.cmd="echo", .cmd_func=echo_command, .desc="Print a string"}
 		,{.cmd="alias", .cmd_func=alias_command, .desc="Alias a command"}
+		,{.cmd="malloctest", .cmd_func=malloctest_command, .desc="Test malloc function"}
 		,{.cmd="help", .cmd_func=help_command, .desc="help"}
 };
 	*count=sizeof(cfm)/sizeof(cfm[0]);
@@ -93,4 +94,28 @@ const char *alias_map(const char *cmd){
 			return cm[i].map_cmd;
 	}
 	return NULL;
+}
+
+#define alloc_and_check(fd, n, p) if(((p)=malloc(n))==NULL) \
+	fprintf(fd, "\rmalloc fails to allocate %d bytes for me\n", n);
+
+int malloctest_command(int fd, char *cmd){
+	fprintf(fd, "\rAllocate 100 bytes...\n");
+	unsigned char *p, q;
+	alloc_and_check(fd, 100, p);
+	
+	int i;
+	fprintf(fd, "\r");
+	for(i=0;i<100;++i){
+		fprintf(fd, "%x ", p[i]);
+	}
+	fprintf(fd, "\n");
+	
+	alloc_and_check(fd, 100, q);
+	
+	fprintf(fd, "\rAfter freeing p...\n");
+	free(p);
+
+	alloc_and_check(fd, 100, q);
+	fprintf(fd, "\rSuccessful!\n");
 }

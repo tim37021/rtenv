@@ -2,6 +2,7 @@
 #define RTENV_SHELL_H
 
 #include "kernel.h"
+#include "syscall.h"
 
 #define MAX_CMD_LENGTH 32
 #define MAX_CMD_ALIAS 10
@@ -13,6 +14,7 @@ int ps_command(int fd, char *cmd);
 int echo_command(int fd, char *cmd);
 int help_command(int fd, char *cmd);
 int alias_command(int fd, char *cmd);
+int malloctest_command(int fd, char *cmd);
 
 int parse_cmd(char *buf);
 
