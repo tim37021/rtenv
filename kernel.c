@@ -611,6 +611,10 @@ _mknod(struct pipe_ringbuffer *pipe, int dev)
 int main()
 {
 	unsigned int stacks[TASK_LIMIT][STACK_SIZE];
+	/*for sbrk*/
+	unsigned char heaps[TASK_LIMIT][HEAP_SIZE];
+	unsigned char *program_break[TASK_LIMIT];
+
 	struct task_control_block tasks[TASK_LIMIT];
 	struct pipe_ringbuffer pipes[PIPE_LIMIT];
 	struct task_control_block *ready_list[PRIORITY_LIMIT + 1];  /* [0 ... 39] */
@@ -651,6 +655,10 @@ int main()
 	/* Initialize ready lists */
 	for (i = 0; i <= PRIORITY_LIMIT; i++)
 		ready_list[i] = NULL;
+	
+	/* Initialize heap pointers*/
+	for (i = 0; i <= TASK_LIMIT; i++)
+		program_break[i] = heaps[i] - 1;
 
 	while (1) {
 		tasks[current_task].stack = activate(tasks[current_task].stack);
@@ -740,6 +748,14 @@ int main()
 				tasks[current_task].stack->r0 += tick_count;
 				tasks[current_task].status = TASK_WAIT_TIME;
 			}
+			break;
+		case SYSCALL_SBRK: /* sbrk */
+			if (program_break[current_task]+tasks[current_task].stack->r0>=heaps[current_task]-1&&program_break[current_task]+tasks[current_task].stack->r0<heaps[current_task+1]){
+				program_break[current_task]+=tasks[current_task].stack->r0;
+				tasks[current_task].stack->r0=program_break[current_task];
+			}
+			else
+				tasks[current_task].stack->r0 = -1;
 			break;
 		default: /* Catch all interrupts */
 			if ((int)tasks[current_task].stack->r7 < 0) {
