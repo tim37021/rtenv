@@ -18,7 +18,7 @@ void *malloc(size_t n){
 		first_available_mem=last_available_mem+1;
 	}
 	/*Search for available mem*/
-	signed char *p=first_available_mem;
+	unsigned char *p=first_available_mem;
 	while(p<=last_available_mem){
 		/*Negative means available*/
 		if(*(TYPEOF_SIZE *)p<0){
@@ -45,6 +45,6 @@ void *malloc(size_t n){
 }
 
 void free(void *mem){
-	if(*(TYPEOF_SIZE *)(mem-SIZEOF_SIZE)>0)
-		*(TYPEOF_SIZE *)(mem-SIZEOF_SIZE)=-*(TYPEOF_SIZE *)(mem-SIZEOF_SIZE);
+	if(*(TYPEOF_SIZE *)((unsigned char *)mem-SIZEOF_SIZE)>0)
+		*(TYPEOF_SIZE *)((unsigned char *)mem-SIZEOF_SIZE)=-*(TYPEOF_SIZE *)((unsigned char *)mem-SIZEOF_SIZE);
 }

@@ -752,7 +752,7 @@ int main()
 		case SYSCALL_SBRK: /* sbrk */
 			if (program_break[current_task]+tasks[current_task].stack->r0>=heaps[current_task]-1&&program_break[current_task]+tasks[current_task].stack->r0<heaps[current_task+1]){
 				program_break[current_task]+=tasks[current_task].stack->r0;
-				tasks[current_task].stack->r0=program_break[current_task];
+				tasks[current_task].stack->r0=(int)program_break[current_task];
 			}
 			else
 				tasks[current_task].stack->r0 = -1;
