@@ -110,13 +110,14 @@ int malloctest_command(int fd, char *cmd){
 		fprintf(fd, "%x ", p[i]);
 	}
 	fprintf(fd, "\n");
-	
-	alloc_and_check(fd, 100, q);
-	
+
+	fprintf(fd, "\rp=%x\n", p);	
 	fprintf(fd, "\rAfter freeing p...\n");
 	free(p);
 
 	alloc_and_check(fd, 100, q);
 	fprintf(fd, "\rSuccessful!\n");
+
+	fprintf(fd, "\rq=%x\n", q);	
 	free(q);
 }
