@@ -101,7 +101,7 @@ const char *alias_map(const char *cmd){
 
 int malloctest_command(int fd, char *cmd){
 	fprintf(fd, "\rAllocate 100 bytes...\n");
-	unsigned char *p, q;
+	unsigned char *p, *q;
 	alloc_and_check(fd, 100, p);
 	
 	int i;
@@ -118,4 +118,5 @@ int malloctest_command(int fd, char *cmd){
 
 	alloc_and_check(fd, 100, q);
 	fprintf(fd, "\rSuccessful!\n");
+	free(q);
 }
