@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #define STACK_SIZE 512 /* Size of task stacks in words */
-#define HEAP_SIZE 128 /* Size of task heaps in BYTE */
+#define HEAP_SIZE 512 /* Size of task heaps in BYTE */
 #define TASK_LIMIT 8  /* Max number of tasks we can handle */
 #define PIPE_BUF   64 /* Size of largest atomic pipe message */
 #define PATH_MAX   32 /* Longest absolute path */

@@ -612,7 +612,7 @@ int main()
 {
 	unsigned int stacks[TASK_LIMIT][STACK_SIZE];
 	/*for sbrk*/
-	unsigned char heaps[TASK_LIMIT][HEAP_SIZE];
+	static unsigned char heaps[TASK_LIMIT][HEAP_SIZE];
 	unsigned char *program_break[TASK_LIMIT];
 
 	struct task_control_block tasks[TASK_LIMIT];
