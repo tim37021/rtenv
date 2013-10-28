@@ -2,9 +2,25 @@
 
 	.type	SysTick_Handler, %function
 	.global SysTick_Handler
+SysTick_Handler:
+        mrs r0, psp
+        stmdb r0!, {r7}
+
+        /* Get ISR number */
+        mrs r7, ipsr
+        neg r7, r7
+
+        /* save user state */
+        stmdb r0!, {r4, r5, r6, r7, r8, r9, r10, r11, lr}
+
+        /* load kernel state */
+        pop {r4, r5, r6, r7, r8, r9, r10, r11, ip, lr}
+        msr psr, ip
+
+        bx lr
+
 	.type	USART2_IRQHandler, %function
 	.global USART2_IRQHandler
-SysTick_Handler:
 USART2_IRQHandler:
 	mrs r0, psp
 	stmdb r0!, {r7}
